@@ -1,0 +1,81 @@
+@page "/portfolio"
+@using Contemplation.Models
+@inject HttpClient Http
+
+<section class="ftco-section ftco-bread">
+	<div class="container">
+		<div class="row no-gutters slider-text justify-content-center align-items-center">
+			<div class="col-md-8 ftco-animate">
+				@if (Collections != null && Collections.Count > 0)
+				{
+					<p class="breadcrumbs">
+						@foreach (var item in Collections)
+						{
+							<span class="mr-2"><a style="cursor: pointer;" @onclick="() => _selectedCollection = item">@item.Name</a></span> 
+						}
+					</p>
+				}
+				@if (_selectedCollection is null)
+				{
+					<h1 class="bread">Chargement...</h1>
+				} else {
+					<h1 class="bread">@_selectedCollection.Name</h1>
+				}
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="ftco-section-3">
+	<div class="photograhy">
+		<div class="row">
+			@if (_selectedCollection != null)
+			{
+				foreach (var image in _selectedCollection.Images)
+				{
+					<div class="col-md-4 ftco-animate">
+						<a href="@_selectedCollection.GetFullPath(image)" class="photography-entry img image-popup d-flex justify-content-start align-items-end" style="background-image: url('@_selectedCollection.GetFullPath(image)');">
+							<div class="overlay"></div>
+							<div class="text ml-4 mb-4">
+								@if (!string.IsNullOrEmpty(image.Title))
+								{
+									<h3>@image.Title</h3>
+								}
+								@if (!string.IsNullOrEmpty(image.Subheader))
+                                {
+                                	<span class="tag">@image.Subheader</span>
+                                }
+							</div>
+						</a>
+					</div>
+				}
+			}
+		</div>
+	</div>
+</section>
+
+@code {
+	List<Collection> Collections = new();
+	Collection _selectedCollection;
+	
+	protected override async Task OnInitializedAsync()
+	{
+		Global.CurrentPage = Global.Pages.Portfolio;
+		var collections = await Http.GetFromJsonAsync<string[]>("collections/collections.json");
+		if (collections != null)
+		{
+			foreach (var item in collections)
+			{
+				var collection = await Collection.GetCollection(item, Http);
+				if(collection != null)
+					Collections.Add(collection);
+			}
+			if (Collections.Count > 0)
+				_selectedCollection = Collections.FirstOrDefault();
+
+		}
+		StateHasChanged();
+	}
+	
+	
+}
